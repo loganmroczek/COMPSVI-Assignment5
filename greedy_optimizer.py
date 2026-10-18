@@ -46,7 +46,7 @@ def maximize_deliveries(time_windows):
             selected.append(window)
             last_end_time = window["end"]
 
-    return selected
+    return [window['delivery_id'] for window in selected]
 
 
 # ============================================================================
@@ -150,7 +150,6 @@ def minimize_drivers(deliveries):
     
     sorted_intervals = sorted(deliveries, key=lambda x: x["start"])
 
-    print(sorted_intervals)
     drivers = []
     assignments = []
 
