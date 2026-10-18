@@ -33,11 +33,20 @@ def maximize_deliveries(time_windows):
         ]
         maximize_deliveries(time_windows) returns ['A', 'C']
     """
-    # TODO: Implement greedy algorithm for activity selection
-    # Hint: What greedy choice gives you the most room for future deliveries?
-    # Hint: Think about sorting by a specific attribute
-    
-    pass  # Delete this and write your code
+    # sort by the earliest end time
+    sorted_windows = sorted(time_windows, key=lambda x: x['end'])
+
+    # select the first entry and save its end time to last_end_time
+    selected = [sorted_windows[0]]
+    last_end_time = sorted_windows[0]["end"]
+
+    # iterate through remaining deliveries and apend next viable window then update last_end_time
+    for window in sorted_windows[1:]:
+        if window["start"] >= last_end_time:
+            selected.append(window)
+            last_end_time = window["end"]
+
+    return selected
 
 
 # ============================================================================
@@ -75,9 +84,36 @@ def optimize_truck_load(packages, weight_limit):
     # TODO: Implement greedy algorithm for fractional knapsack
     # Hint: What ratio determines which packages are most valuable per pound?
     # Hint: You can take fractions - if you have 5 lbs capacity left and a 10 lb package, take 0.5 of it
-    
-    pass  # Delete this and write your code
 
+    package_ratios = []
+    for package in packages:
+        ratio = package["priority"] / package["weight"]
+        package_ratios.append((package, ratio))
+
+    sorted_packages = sorted(package_ratios, key=lambda x: x[1], reverse=True)
+
+    total_priority = 0
+    total_weight = 0
+    selected = []
+
+    for package, ratio in sorted_packages:
+        if total_weight + package["weight"] <= weight_limit:
+            selected.append((package, 1.0))
+            total_weight += package["weight"]
+            total_priority += package["priority"]
+        else:
+            remaining = weight_limit - total_weight
+            fraction = remaining / package["weight"]
+            selected.append((package, fraction))
+            total_weight += remaining
+            total_priority += package["priority"] * fraction
+            break
+
+    return {
+        'total_priority': total_priority,
+        'total_weight': total_weight,
+        'packages': [{'package_id': pkg['package_id'], 'fraction': frac} for pkg, frac in selected]
+    }
 
 # ============================================================================
 # PART 3: DRIVER ASSIGNMENT (Interval Scheduling)
@@ -112,7 +148,30 @@ def minimize_drivers(deliveries):
     # Hint: How do you know if a delivery overlaps with another?
     # Hint: Can you assign a delivery to an existing driver, or do you need a new one?
     
-    pass  # Delete this and write your code
+    sorted_intervals = sorted(deliveries, key=lambda x: x["start"])
+
+    print(sorted_intervals)
+    drivers = []
+    assignments = []
+
+    for interval in sorted_intervals:
+        assigned = False
+        for i, driver_end_time in enumerate(drivers):
+            if interval["start"] >= driver_end_time:
+                drivers[i] = interval["end"]
+                assignments[i].append(interval)
+                assigned = True
+                break
+
+        if not assigned:
+            drivers.append(interval["end"])
+            assignments.append([interval])
+
+    return {
+        'num_drivers': len(drivers), 
+        'assignments': assignments
+    }
+
 
 
 # ============================================================================
@@ -300,6 +359,6 @@ if __name__ == "__main__":
     # test_package_prioritization()
     # test_truck_loading()
     # test_driver_assignment()
-    # benchmark_scenarios()
+    benchmark_scenarios()
     
     print("\n⚠ Uncomment the test functions in the main block to run tests!")
